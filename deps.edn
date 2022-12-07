@@ -1,0 +1,4 @@
+{:paths ["src" "inputs"]
+ :deps {org.clojure/clojure {:mvn/version "1.11.1"}}
+ :aliases {:dev {:extra-paths #{"dev"}
+                 :extra-deps {cider/cider-nrepl {:mvn/version "0.28.6"}}}}}
