@@ -278,3 +278,49 @@
 
   ; Part B
   (find-distinct 14 (io/inputs-text "2022_6.txt")))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 2022 Day 7
+
+(defn build-sizes [lines]
+  (let [add (fnil + 0)]
+    (loop [sizes {} pwd [] [head & tail] lines]
+      (case (or (not head) (subs head 0 4))
+        "$ cd" (let [pwd' (if (= (subs head 5) "..")
+                            (pop pwd)
+                            (conj pwd (subs head 5)))]
+                 (recur sizes pwd' tail))
+        "$ ls" (let [contents (take-while #(not= (first %) \$) tail)
+                     files-size (->> contents
+                                     (filter #(not= (subs % 0 3) "dir"))
+                                     (map (comp #(Long/parseLong %)
+                                                first
+                                                #(str/split % #" ")))
+                                     (apply +))
+                     sizes' (->> (range 1 (inc (count pwd)))
+                                 (map #(subvec pwd 0 %))
+                                 (reduce (fn [s path] (update s path add files-size))
+                                         sizes))
+                     tail' (drop (count contents) tail)]
+                 (recur sizes' pwd tail'))
+        true sizes))))
+
+(comment
+  ;Part A
+  (->> (io/inputs-text "2022_7.txt")
+       str/split-lines
+       build-sizes
+       (map val)
+       (filter #(<= % 100000))
+       (apply +))
+
+  ; Part B
+  (let [sizes (->> (io/inputs-text "2022_7.txt")
+                   str/split-lines
+                   build-sizes)
+        free (- 70000000 (get sizes ["/"]))
+        to_delete (- 30000000 free)]
+    (->> sizes
+         (map val)
+         (filter #(>= % to_delete))
+         (apply min))))
