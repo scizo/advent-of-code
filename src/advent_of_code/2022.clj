@@ -310,7 +310,7 @@
   (->> (io/inputs-text "2022_7.txt")
        str/split-lines
        build-sizes
-       (map val)
+       vals
        (filter #(<= % 100000))
        (apply +))
 
@@ -321,6 +321,59 @@
         free (- 70000000 (get sizes ["/"]))
         to_delete (- 30000000 free)]
     (->> sizes
-         (map val)
+         vals
          (filter #(>= % to_delete))
          (apply min))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 2022 Day 8
+
+(defn reflect [xs] (map reverse xs))
+(defn transpose [xs] (apply map vector xs))
+
+(defn visible [row]
+  (->> row
+       (reductions (fn [{:keys [mx]} height]
+                     {:mx (max height mx)
+                      :vis (< mx height)})
+                   {:mx Byte/MIN_VALUE})
+       (drop 1)
+       (map :vis)))
+
+(defn score-2d [row]
+  (letfn [(score-1d [tree trees]
+            (reduce (fn [cnt next-tree]
+                      (if (< next-tree tree)
+                        (inc cnt)
+                        (reduced (inc cnt))))
+                    0 trees))]
+    (loop [left '() [tree & right] row scores []]
+      (if tree
+        (recur (conj left tree)
+               right
+               (conj scores (* (score-1d tree left)
+                               (score-1d tree right))))
+        scores))))
+
+(comment
+  ; Part A
+  (let [forest (->> (io/inputs-text "2022_8.txt")
+                    str/split-lines
+                    (map #(map byte %)))
+        left (->> forest (map visible) flatten)
+        right (->> forest reflect (map visible) reflect flatten)
+        top (->> forest transpose (map visible) transpose flatten)
+        bottom (->> forest transpose reflect (map visible) reflect transpose flatten)]
+    (->> (map (fn [l r t b] (or l r t b)) left right top bottom)
+         (filter identity)
+         count))
+
+  ; Part B
+  (let [forest (->> (io/inputs-text "2022_8.txt")
+                    str/split-lines
+                    (map #(map byte %)))
+        rowwise (->> forest (map score-2d) flatten)
+        columnwise (->> forest transpose (map score-2d) transpose flatten)]
+    (->> (map * rowwise columnwise)
+         (apply max))))
+
