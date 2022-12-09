@@ -377,3 +377,56 @@
     (->> (map * rowwise columnwise)
          (apply max))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 2022 Day 9
+
+(defn move [[x y] direction]
+  (case direction
+    U [x (inc y)]
+    D [x (dec y)]
+    L [(dec x) y]
+    R [(inc x) y]))
+
+(defn tail-moves [[x1 y1] [x2 y2]]
+  (case [(- x2 x1) (- y2 y1)]
+    [0 2]                     ['U]
+    ([1 2] [2 1] [2 2])       ['U 'R]
+    [2 0]                     ['R]
+    ([2 -1] [1 -2] [2 -2])    ['D 'R]
+    [0 -2]                    ['D]
+    ([-2 -1] [-1 -2] [-2 -2]) ['D 'L]
+    [-2 0]                    ['L]
+    ([-2 1] [-1 2] [-2 2])    ['U 'L]
+                              []))
+
+(defn step-old [[head tail] direction]
+  (let [head' (move head direction)
+        tail' (->> (tail-moves tail head')
+                   (reduce move tail))]
+    [head' tail']))
+
+(defn step [[head & knots] direction]
+  (let [head' (move head direction)]
+    (loop [head' head' [tail & knots'] knots moved [head']]
+      (if tail
+        (let [tail' (->> (tail-moves tail head')
+                         (reduce move tail))]
+          (recur tail' knots' (conj moved tail')))
+        moved))))
+
+(defn position-count [n]
+  (->> (io/inputs "2022_9.txt")
+       (partition 2)
+       (mapcat (fn [[direction cnt]]
+                 (repeat cnt direction)))
+       (reductions step (repeat n [0 0]))
+       (map last)
+       set
+       count))
+
+(comment
+  ; Part A
+  (position-count 2)
+
+  ; Part B
+  (position-count 10))
