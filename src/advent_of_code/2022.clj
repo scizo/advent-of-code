@@ -430,3 +430,38 @@
 
   ; Part B
   (position-count 10))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 2022 Day 10
+
+(defn register-states [tokens]
+  (loop [state 1 states [1] [head & tail] tokens]
+    (case head
+      noop (recur state (conj states state) tail)
+      addx (let [state' (+ state (first tail))]
+             (recur state' (into states [state state']) (rest tail)))
+      nil states)))
+
+(defn draw [col center]
+  (if (< 1 (abs (- center col)))
+    "." "#"))
+
+(comment
+  ; Part A
+  (->> (io/inputs "2022_10.txt")
+       register-states
+       (drop 19)
+       (partition 40 40 nil)
+       (map first)
+       (take 6)
+       (map * (range 20 240 40))
+       (apply +))
+
+  ; Part B
+  (->> (io/inputs "2022_10.txt")
+       register-states
+       (partition 40)
+       (map #(map draw (range 0 40) %))
+       (map #(apply str %))
+       (str/join "\n")
+       print))
